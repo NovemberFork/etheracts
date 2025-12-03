@@ -1,15 +1,17 @@
 [package]
 name = "etheracts"
-version = "0.1.0"
-edition = "2024_07"
-cairo-version = "2.13.1"
+version = "0.1.1"
+authors = ["NovemberFork <contact@novemberfork.io>", "0xDegenDeveloper"]
 license = "MIT"
 description = "High resolution renders and an arbitrary registration protocol."
-authors = ["NovemberFork", "0xDegenDeveloper"]
-readme = "README.md"
 homepage = "https://etheracts.novemberfork.io/"
+documentation = "https://etheracts.novemberfork.io/docs"
 repository = "https://github.com/NovemberFork/etheracts"
-
+readme = "README.md"
+edition = "2024_07"
+cairo-version = "2.13.1"
+skip-optimization = false
+publish = true
 
 [lib]
 
