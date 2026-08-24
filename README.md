@@ -1,6 +1,6 @@
 # Etheracts
 
-Etheracts is a collection of high resolution renders and an arbitrary registration protocol built on Starknet. To participate, you must own a piece from the collection.
+Etheracts is a collection of high resolution renders and an arbitrary registration protocol built on Starknet. To participate in the protocol, you must own a piece from the collection.
 
 ## Quick Links
 
@@ -10,7 +10,7 @@ Etheracts is a collection of high resolution renders and an arbitrary registrati
 
 ## Ethrx
 
-The Etheracts contract is deployed on Starknet [here]().
+The Etheracts contract is deployed on Starknet [here](https://voyager.online/nft-contract/0x03d7811b831bfb98d3c3ac9d7dcc28b43445c35afc82a931d5c06ebc2804f740).
 
 ### How It Works
 
