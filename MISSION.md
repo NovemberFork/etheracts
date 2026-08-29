@@ -126,6 +126,14 @@ Repo `snfoundry.toml` points at that path.
 sncast does **not** use `starkli_keystore_*.json` unless you pass `--keystore`.
 
 If you have a newer accounts JSON, change `accounts-file` in `snfoundry.toml` (or pass `--accounts-file`).
+
+**RPC:** `.env` keys `TESTNET_RPC_URL` / `MAINNET_RPC_URL` → `snfoundry.toml` `[sncast.*.networks]`. sncast does not load `.env` on its own:
+
+```bash
+set -a && source .env && set +a
+sncast call --network sepolia --contract-address 0x... --function version
+```
+
 6. Mainnet: Argent declares → Braavos `upgrade_contract` → verify new class.
 7. Delete `integration2/` when we trust sncast. Delete this file.
 
