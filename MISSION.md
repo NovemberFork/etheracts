@@ -111,8 +111,21 @@ sncast invoke \
 1. ~~Bump asdf: Scarb 2.19.4, Foundry 0.63, voyager 2.3.1.~~ Done. Sierra **1.9.3**. OZ 2.0.0 still compiles. `scarb build` green. Tests: snforge now appends `ENTRYPOINT_FAILED` on nested ERC20 panics — assert on first felt.
 2. Keep OZ 2.0.0. Fix whatever the compiler yells about.
 3. `scarb test` green on current behavior.
-4. Implement no-op events + tests.
+4. ~~Implement no-op events + tests.~~
 5. Sepolia: declare → `sncast verify --verifier voyager` → owner `upgrade_contract` → call `version() == 2`.
+
+## sncast wallet
+
+Default file: `~/.starknet_accounts/starknet_open_zeppelin_accounts.json`  
+Repo `snfoundry.toml` points at that path.
+
+- Sepolia (`testnet_deployer` / `work-sepolia-wallet` / `bonsai-testnet`): `0x03ff18229…` — this **is** the Sepolia owner. Declare + upgrade from this account.
+- Mainnet declare (`etheracts_deployer`): `0x03f4e6b58…` Argent/Ready. Cannot upgrade.
+- Mainnet upgrade: Braavos `0x0280dcce9…` — not in this file. Wallet UI.
+
+sncast does **not** use `starkli_keystore_*.json` unless you pass `--keystore`.
+
+If you have a newer accounts JSON, change `accounts-file` in `snfoundry.toml` (or pass `--accounts-file`).
 6. Mainnet: Argent declares → Braavos `upgrade_contract` → verify new class.
 7. Delete `integration2/` when we trust sncast. Delete this file.
 
