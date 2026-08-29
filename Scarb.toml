@@ -18,6 +18,11 @@ readme = "README.md"
 [dependencies]
 starknet = "=2.20.0"
 alexandria_bytes = "=0.6.1"
+# alexandria_bytes 0.6.1 declares these as `^0.6.1`, so a fresh resolve
+# (Voyager re-resolves; it never uses Scarb.lock) floats them to 0.6.2 and
+# produces a different class hash. Pin them here or verification fails E005.
+alexandria_data_structures = "=0.6.1"
+alexandria_math = "=0.6.1"
 openzeppelin_access = "=2.0.0"
 openzeppelin_account = "=2.0.0"
 openzeppelin_introspection = "=2.0.0"
