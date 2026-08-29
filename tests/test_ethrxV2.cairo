@@ -2,10 +2,10 @@ use alexandria_bytes::Bytes;
 use core::num::traits::Zero;
 use etheracts::ethrx::contract::Ethrx;
 use etheracts::ethrx::interface::{
-    IEthrxDispatcher, IEthrxDispatcherTrait, IEthrxSafeDispatcher, IEthrxSafeDispatcherTrait,
+    IEthrxDispatcherTrait, IEthrxSafeDispatcher, IEthrxSafeDispatcherTrait,
 };
 use etheracts::types::engraving::{Artifact, Engraving, INITIAL_ENGRAVINGS};
-use openzeppelin_access::ownable::interface::{IOwnableDispatcher, IOwnableDispatcherTrait};
+use openzeppelin_access::ownable::interface::IOwnableDispatcherTrait;
 use openzeppelin_token::erc20::ERC20Component;
 use openzeppelin_token::erc20::interface::IERC20DispatcherTrait;
 use openzeppelin_token::erc721::ERC721Component;
@@ -1943,7 +1943,7 @@ fn test_initial_111_tokens_still_minted_during_deployment() {
 #[test]
 #[should_panic]
 fn test_minting_fails_when_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 
@@ -1993,7 +1993,7 @@ fn test_set_minting_non_owner_fails() {
 
 #[test]
 fn test_minting_works_after_enabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 
@@ -2021,7 +2021,7 @@ fn test_minting_works_after_enabled() {
 #[test]
 #[should_panic]
 fn test_minting_fails_after_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 

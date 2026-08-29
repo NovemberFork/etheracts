@@ -11,7 +11,7 @@ use openzeppelin_token::erc721::interface::{
 };
 use snforge_std::{start_cheat_caller_address, stop_cheat_caller_address};
 use starknet::ContractAddress;
-use crate::ethrxV2::{IEthrxV2Dispatcher, IEthrxV2SafeDispatcher};
+use crate::ethrxV2::IEthrxV2Dispatcher;
 use crate::setup::BYSTANDER;
 
 #[derive(Drop)]
@@ -369,7 +369,6 @@ pub impl EthrxFacadeImpl of EthrxTrait {
 pub impl EthrxFacadeImplV2 of EthrxV2Trait {
     fn new(contract_address: ContractAddress) -> EthrxV2Facade {
         let dispatcher = IEthrxV2Dispatcher { contract_address };
-        let safe_dispatcher = IEthrxV2SafeDispatcher { contract_address };
         let dispatcherV1 = IEthrxDispatcher { contract_address };
         let safe_dispatcherV1 = IEthrxSafeDispatcher { contract_address };
         let ownable = IOwnableDispatcher { contract_address };

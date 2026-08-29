@@ -1828,7 +1828,7 @@ fn test_initial_111_tokens_still_minted_during_deployment() {
 #[test]
 #[should_panic]
 fn test_minting_fails_when_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
 
     // Verify minting is disabled
     assert!(!ethrx.is_minting(), "Minting should be disabled");
@@ -1872,7 +1872,7 @@ fn test_set_minting_non_owner_fails() {
 
 #[test]
 fn test_minting_works_after_enabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
 
     // Verify minting is disabled initially
     assert!(!ethrx.is_minting(), "Minting should be disabled initially");
@@ -1898,7 +1898,7 @@ fn test_minting_works_after_enabled() {
 #[test]
 #[should_panic]
 fn test_minting_fails_after_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
 
     // Enable minting first
     start_cheat_caller_address(ethrx.contract_address, OWNER);

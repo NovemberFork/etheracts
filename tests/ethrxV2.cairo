@@ -1,7 +1,3 @@
-use alexandria_bytes::BytesStore;
-use etheracts::types::engraving::Artifact;
-use starknet::{ClassHash, ContractAddress};
-
 #[derive(Drop, Serde)]
 pub struct InitializerV2Args {
     pub new_feature: felt252,
