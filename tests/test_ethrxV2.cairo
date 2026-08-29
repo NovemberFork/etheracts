@@ -507,7 +507,7 @@ fn test_minting_no_allownace_or_funds() {
     let result = ethrx.mint(array![1, 2], array![ALICE, BOB]);
     assert!(result.is_err(), "minting without allowance should fail");
     assert!(
-        result.unwrap_err() == array!['ERC20: insufficient allowance'], "error message mismatch",
+        *result.unwrap_err().at(0) == 'ERC20: insufficient allowance', "error message mismatch",
     );
     stop_cheat_caller_address(ethrx.contract_address);
 
@@ -520,7 +520,9 @@ fn test_minting_no_allownace_or_funds() {
     start_cheat_caller_address(ethrx.contract_address, BYSTANDER);
     let result = ethrx.mint(array![1, 2], array![ALICE, BOB]);
     assert!(result.is_err(), "minting without funds should fail");
-    assert!(result.unwrap_err() == array!['ERC20: insufficient balance'], "error message mismatch");
+    assert!(
+        *result.unwrap_err().at(0) == 'ERC20: insufficient balance', "error message mismatch",
+    );
 }
 
 fn build_engraving(tag: felt252, data: ByteArray) -> Engraving {

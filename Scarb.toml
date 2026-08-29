@@ -2,11 +2,12 @@
 name = "etheracts"
 version = "0.1.0"
 edition = "2024_07"
+cairo-version = "2.19.4"
 
 [lib]
 
 [dependencies]
-starknet = "2.12.2"
+starknet = "2.19.4"
 alexandria_bytes = "0.6.1"
 openzeppelin_access = "2.0.0"
 openzeppelin_account = "2.0.0"
@@ -15,8 +16,8 @@ openzeppelin_token = "2.0.0"
 openzeppelin_upgrades = "2.0.0"
 
 [dev-dependencies]
-snforge_std = "0.50.0"
-assert_macros = "2.12.2"
+snforge_std = "0.63.0"
+assert_macros = "2.19.4"
 
 [[target.starknet-contract]]
 sierra = true

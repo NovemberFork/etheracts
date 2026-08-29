@@ -30,15 +30,15 @@ Plan: local Argent declares new class → Braavos invokes `upgrade_contract(new_
 
 ## Tooling now vs target
 
-| | This repo (`main`) | Latest (Aug 2026) |
+| | This branch (now) | Latest (Aug 2026) |
 |---|---|---|
-| Scarb / Cairo | **2.12.2** / Sierra 1.7 | Scarb **2.20.1** / Cairo **2.20.0** |
-| Foundry (`snforge`/`sncast`) | 0.50.0 | **0.63.0** |
-| voyager CLI | not pinned | **2.3.1** |
-| OZ | 2.0.0 | 3.0.0 stable, **4.0.0** current |
+| Scarb / Cairo | **2.19.4** / Sierra **1.9.3** | Scarb **2.20.1** / Cairo **2.20.0** |
+| Foundry (`snforge`/`sncast`) | **0.63.0** | **0.63.0** |
+| voyager CLI | **2.3.1** | **2.3.1** |
+| OZ | **2.0.0** (kept) | 3.0.0 stable, **4.0.0** current |
 | SN mainnet | — | **0.14.3** → Cairo 2.19.0 / Sierra **1.9.0** |
 
-Old `verification` branch had already bumped to 2.13.1 + Foundry 0.52. We discarded that. Bumps start from **2.12.2**.
+Started from `main` at 2.12.2 / Foundry 0.50. Old `verification` branch had stopped at 2.13.1.
 
 Starkup = the official installer (`curl https://sh.starkup.sh \| sh`). Under the hood it is still asdf. We already have asdf. Do not reinstall from scratch. Bump versions in `.tool-versions`.
 
@@ -108,7 +108,7 @@ sncast invoke \
 
 ## Order of work
 
-1. Bump asdf: Scarb 2.19.4, Foundry 0.63, voyager 2.3.1. Confirm `scarb --version` Sierra.
+1. ~~Bump asdf: Scarb 2.19.4, Foundry 0.63, voyager 2.3.1.~~ Done. Sierra **1.9.3**. OZ 2.0.0 still compiles. `scarb build` green. Tests: snforge now appends `ENTRYPOINT_FAILED` on nested ERC20 panics — assert on first felt.
 2. Keep OZ 2.0.0. Fix whatever the compiler yells about.
 3. `scarb test` green on current behavior.
 4. Implement no-op events + tests.
