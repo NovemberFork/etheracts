@@ -1,5 +1,4 @@
 use etheracts::ethrx::interface::ConstructorArgs;
-use etheracts::mocks::erc20::{IMintableDispatcher, IMintableDispatcherTrait};
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::signature::stark_curve::{
     StarkCurveKeyPairImpl, StarkCurveSignerImpl, StarkCurveVerifierImpl,
@@ -10,6 +9,7 @@ use snforge_std::{
 };
 use starknet::{ClassHash, ContractAddress};
 use crate::ethrxV2::InitializerV2Args;
+use crate::mock_erc20::{IMintableDispatcher, IMintableDispatcherTrait};
 use crate::utils::{EthrxFacade, EthrxFacadeImpl};
 
 
