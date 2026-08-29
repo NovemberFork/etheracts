@@ -1,5 +1,6 @@
 # Etheracts Contract Makefile
 # ==========================
+# Go deployer is archived in integration2/. Live path: sncast (see MISSION.md).
 
 .PHONY: help build clean deps deploy-local deploy-testnet deploy-mainnet setup test fmt lint config
 
@@ -29,22 +30,22 @@ help:
 # Build the deployment tool, contracts, and generate ABIs
 build:
 	@echo "🔨 Building deployment tool..."
-	cd integration && go build -o bin/deploy ./cmd/deploy
+	cd integration2 && go build -o bin/deploy ./cmd/deploy
 	@echo "🔨 Building contracts and generating ABIs..."
-	cd integration/cmd && chmod +x generate_abi.sh && ./generate_abi.sh
+	cd integration2/cmd && chmod +x generate_abi.sh && ./generate_abi.sh
 	@echo "✅ Build completed!"
 
 # Clean build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	rm -rf integration/bin/
+	rm -rf integration2/bin/
 	rm -rf target/
 	@echo "✅ Clean completed!"
 
 # Install dependencies
 deps:
 	@echo "📦 Installing dependencies..."
-	cd integration && go mod tidy && go mod download
+	cd integration2 && go mod tidy && go mod download
 	scarb build
 	@echo "✅ Dependencies installed!"
 
@@ -56,7 +57,7 @@ deploy-local: build
 		exit 1; \
 	fi
 	@echo "📋 Setting NETWORK=local"
-	cd integration && NETWORK=local ./bin/deploy ethrx
+	cd integration2 && NETWORK=local ./bin/deploy ethrx
 
 # Deploy to testnet
 deploy-testnet: build
@@ -66,7 +67,7 @@ deploy-testnet: build
 		exit 1; \
 	fi
 	@echo "📋 Setting NETWORK=testnet"
-	cd integration && NETWORK=testnet ./bin/deploy ethrx
+	cd integration2 && NETWORK=testnet ./bin/deploy ethrx
 
 # Deploy to mainnet
 deploy-mainnet: build
@@ -78,7 +79,7 @@ deploy-mainnet: build
 	@echo "📋 Setting NETWORK=mainnet"
 	@echo "⚠️  This will deploy to MAINNET. Are you sure? (Press Ctrl+C to cancel)"
 	@sleep 5
-	cd integration && NETWORK=mainnet ./bin/deploy ethrx
+	cd integration2 && NETWORK=mainnet ./bin/deploy ethrx
 
 # Setup development environment
 setup: deps
