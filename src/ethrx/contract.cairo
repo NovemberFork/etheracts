@@ -181,7 +181,7 @@ pub mod Ethrx {
         fn artifact_tag_nonces(
             self: @ContractState, artifact_ids: Array<felt252>, tags: Array<felt252>,
         ) -> Array<usize> {
-            assert!(artifact_ids.len() == tags.len(), "Mismatched lengths");
+            assert!(tags.len() == artifact_ids.len(), "Mismatched lengths");
             artifact_ids
                 .into_iter()
                 .zip(tags)
