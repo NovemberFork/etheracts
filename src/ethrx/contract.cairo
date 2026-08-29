@@ -175,23 +175,23 @@ pub mod Ethrx {
         fn token_ids_to_artifact_ids(
             self: @ContractState, token_ids: Array<u256>,
         ) -> Array<felt252> {
-            token_ids.into_iter().map(|id| self.token_artifact_ids.entry(id).read()).collect()
+            let mut out: Array<felt252> = array![];
+            for id in token_ids {
+                out.append(self.token_artifact_ids.entry(id).read());
+            }
+            out
         }
 
         fn artifact_tag_nonces(
             self: @ContractState, artifact_ids: Array<felt252>, tags: Array<felt252>,
         ) -> Array<usize> {
             assert!(tags.len() == artifact_ids.len(), "Mismatched lengths");
-            artifact_ids
-                .into_iter()
-                .zip(tags)
-                .map(
-                    |key| {
-                        let (artifact_id, tag) = key;
-                        self.tag_nonces.entry((artifact_id, tag)).read()
-                    },
-                )
-                .collect()
+            let mut out: Array<usize> = array![];
+            for key in artifact_ids.into_iter().zip(tags) {
+                let (artifact_id, tag) = key;
+                out.append(self.tag_nonces.entry((artifact_id, tag)).read());
+            }
+            out
         }
 
         fn get_artifacts(self: @ContractState, token_ids: Array<u256>) -> Array<Artifact> {
@@ -396,10 +396,11 @@ pub mod Ethrx {
         fn _get_artifact_nonces(
             self: @ContractState, artifact_id: felt252, tags: @Array<felt252>,
         ) -> Array<usize> {
-            (tags)
-                .into_iter()
-                .map(|tag| self.tag_nonces.entry((artifact_id, *tag)).read())
-                .collect()
+            let mut out: Array<usize> = array![];
+            for tag in tags {
+                out.append(self.tag_nonces.entry((artifact_id, *tag)).read());
+            }
+            out
         }
 
         fn _lookup_artifact(
@@ -410,19 +411,17 @@ pub mod Ethrx {
         ) -> Artifact {
             assert!(tags.len() == tag_nonces.len(), "Mismatched lengths");
 
-            let collection: Array<Engraving> = tags
-                .into_iter()
-                .zip(tag_nonces)
-                .map(
-                    |tag_nonce| {
-                        let (tag, nonce) = tag_nonce;
+            let mut collection: Array<Engraving> = array![];
+            for tag_nonce in tags.into_iter().zip(tag_nonces) {
+                let (tag, nonce) = tag_nonce;
+                collection
+                    .append(
                         Engraving {
                             tag: *tag,
                             data: self.artifacts.entry((artifact_id, *tag, *nonce)).read(),
-                        }
-                    },
-                )
-                .collect();
+                        },
+                    );
+            }
 
             Artifact { collection }
         }

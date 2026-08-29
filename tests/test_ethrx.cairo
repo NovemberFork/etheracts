@@ -353,9 +353,7 @@ fn test_minting_no_allownace_or_funds() {
     start_cheat_caller_address(ethrx.contract_address, BYSTANDER);
     let result = ethrx.mint(array![1, 2], array![ALICE, BOB]);
     assert!(result.is_err(), "minting without funds should fail");
-    assert!(
-        *result.unwrap_err().at(0) == 'ERC20: insufficient balance', "error message mismatch",
-    );
+    assert!(*result.unwrap_err().at(0) == 'ERC20: insufficient balance', "error message mismatch");
 }
 
 fn build_engraving(tag: felt252, data: ByteArray) -> Engraving {
@@ -515,8 +513,7 @@ fn test_engrave_mixed_batch_only_changed_emits() {
             112,
             Artifact {
                 collection: array![
-                    ethrx.build_engraving('TITLE', "keep"),
-                    ethrx.build_engraving('MESSAGE', "old"),
+                    ethrx.build_engraving('TITLE', "keep"), ethrx.build_engraving('MESSAGE', "old"),
                 ],
             },
         );
@@ -528,8 +525,7 @@ fn test_engrave_mixed_batch_only_changed_emits() {
             112,
             Artifact {
                 collection: array![
-                    ethrx.build_engraving('TITLE', "keep"),
-                    ethrx.build_engraving('MESSAGE', "new"),
+                    ethrx.build_engraving('TITLE', "keep"), ethrx.build_engraving('MESSAGE', "new"),
                 ],
             },
         );
@@ -1916,4 +1912,3 @@ fn test_minting_fails_after_disabled() {
     // Minting should fail now
     ethrx.mint_batch_star(array![BOB], array![1]);
 }
-

@@ -7,5 +7,3 @@ pub mod ethrx {
     pub mod interface;
 }
 // rabbit holes ...
-
-
