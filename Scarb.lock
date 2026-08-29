@@ -33,6 +33,7 @@ dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_token",
  "openzeppelin_upgrades",
+ "openzeppelin_utils",
  "snforge_std",
 ]
 

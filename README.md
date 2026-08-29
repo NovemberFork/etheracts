@@ -1,6 +1,6 @@
 # Etheracts
 
-Etheracts is a collection of high resolution renders and an arbitrary registration protocol built on Starknet. To participate in the protocol, you must own a piece from the collection.
+Etheracts is a collection of high resolution renders and decentralized billboards built on Starknet. To participate in the protocol, you must own a piece from the collection.
 
 ## Quick Links
 
