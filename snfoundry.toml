@@ -1,0 +1,22 @@
+# sncast reads this from the project (or any parent dir).
+# RPC URLs come from .env (TESTNET_RPC_URL / MAINNET_RPC_URL).
+# sncast does not load .env itself — export first:
+#   set -a && source .env && set +a
+# Override with --account / --accounts-file / --keystore / --url on the CLI.
+
+[sncast.default]
+accounts-file = "~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+account = "testnet_deployer"
+
+
+[sncast.default.networks]
+sepolia = "$TESTNET_RPC_URL"
+mainnet = "$MAINNET_RPC_URL"
+
+[sncast.mainnet]
+accounts-file = "~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+account = "etheracts_deployer"
+
+[sncast.mainnet.networks]
+sepolia = "$TESTNET_RPC_URL"
+mainnet = "$MAINNET_RPC_URL"

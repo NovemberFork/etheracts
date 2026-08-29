@@ -2,21 +2,32 @@
 name = "etheracts"
 version = "0.1.0"
 edition = "2024_07"
+cairo-version = "2.19.4"
+license = "MIT"
+description = "High resolution renders and decentralized billboards."
+homepage = "https://novemberfork.io/etheracts"
+documentation = "https://novemberfork.io/etheracts/docs"
+repository = "https://github.com/NovemberFork/etheracts"
+readme = "README.md"
 
 [lib]
 
+# Pin with `=` so `scarb package` / Voyager cannot float OpenZeppelin
+# transitives. `openzeppelin_token` 2.0.0 depends on `openzeppelin_utils = "^2.0.0"`,
+# which otherwise resolves to 2.2.0 and fails (or verifies against the wrong Sierra).
 [dependencies]
-starknet = "2.12.2"
-alexandria_bytes = "0.6.1"
-openzeppelin_access = "2.0.0"
-openzeppelin_account = "2.0.0"
-openzeppelin_introspection = "2.0.0"
-openzeppelin_token = "2.0.0"
-openzeppelin_upgrades = "2.0.0"
+starknet = "=2.19.4"
+alexandria_bytes = "=0.6.1"
+openzeppelin_access = "=2.0.0"
+openzeppelin_account = "=2.0.0"
+openzeppelin_introspection = "=2.0.0"
+openzeppelin_token = "=2.0.0"
+openzeppelin_upgrades = "=2.0.0"
+openzeppelin_utils = "=2.0.0"
 
 [dev-dependencies]
-snforge_std = "0.50.0"
-assert_macros = "2.12.2"
+snforge_std = "0.63.0"
+assert_macros = "2.19.4"
 
 [[target.starknet-contract]]
 sierra = true

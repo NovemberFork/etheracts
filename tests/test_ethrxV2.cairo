@@ -2,10 +2,10 @@ use alexandria_bytes::Bytes;
 use core::num::traits::Zero;
 use etheracts::ethrx::contract::Ethrx;
 use etheracts::ethrx::interface::{
-    IEthrxDispatcher, IEthrxDispatcherTrait, IEthrxSafeDispatcher, IEthrxSafeDispatcherTrait,
+    IEthrxDispatcherTrait, IEthrxSafeDispatcher, IEthrxSafeDispatcherTrait,
 };
 use etheracts::types::engraving::{Artifact, Engraving, INITIAL_ENGRAVINGS};
-use openzeppelin_access::ownable::interface::{IOwnableDispatcher, IOwnableDispatcherTrait};
+use openzeppelin_access::ownable::interface::IOwnableDispatcherTrait;
 use openzeppelin_token::erc20::ERC20Component;
 use openzeppelin_token::erc20::interface::IERC20DispatcherTrait;
 use openzeppelin_token::erc721::ERC721Component;
@@ -507,7 +507,7 @@ fn test_minting_no_allownace_or_funds() {
     let result = ethrx.mint(array![1, 2], array![ALICE, BOB]);
     assert!(result.is_err(), "minting without allowance should fail");
     assert!(
-        result.unwrap_err() == array!['ERC20: insufficient allowance'], "error message mismatch",
+        *result.unwrap_err().at(0) == 'ERC20: insufficient allowance', "error message mismatch",
     );
     stop_cheat_caller_address(ethrx.contract_address);
 
@@ -520,7 +520,9 @@ fn test_minting_no_allownace_or_funds() {
     start_cheat_caller_address(ethrx.contract_address, BYSTANDER);
     let result = ethrx.mint(array![1, 2], array![ALICE, BOB]);
     assert!(result.is_err(), "minting without funds should fail");
-    assert!(result.unwrap_err() == array!['ERC20: insufficient balance'], "error message mismatch");
+    assert!(
+        *result.unwrap_err().at(0) == 'ERC20: insufficient balance', "error message mismatch",
+    );
 }
 
 fn build_engraving(tag: felt252, data: ByteArray) -> Engraving {
@@ -1941,7 +1943,7 @@ fn test_initial_111_tokens_still_minted_during_deployment() {
 #[test]
 #[should_panic]
 fn test_minting_fails_when_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 
@@ -1991,7 +1993,7 @@ fn test_set_minting_non_owner_fails() {
 
 #[test]
 fn test_minting_works_after_enabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 
@@ -2019,7 +2021,7 @@ fn test_minting_works_after_enabled() {
 #[test]
 #[should_panic]
 fn test_minting_fails_after_disabled() {
-    let (ethrx, erc20) = setup_without_enabling_minting();
+    let (ethrx, _) = setup_without_enabling_minting();
     let ethrx = upgrade(ethrx);
     initializerV2(ethrx);
 
