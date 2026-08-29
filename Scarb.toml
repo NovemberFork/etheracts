@@ -3,6 +3,7 @@ name = "etheracts"
 version = "0.1.0"
 edition = "2024_07"
 cairo-version = "2.19.4"
+license = "MIT"
 
 [lib]
 
