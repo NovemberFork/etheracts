@@ -1,0 +1,10 @@
+# sncast reads this from the project (or any parent dir).
+# Override with --account / --accounts-file / --keystore on the CLI.
+
+[sncast.default]
+accounts-file = "~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+account = "testnet_deployer"
+
+[sncast.mainnet]
+accounts-file = "~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+account = "etheracts_deployer"
