@@ -9,6 +9,7 @@ use openzeppelin_access::ownable::interface::IOwnableDispatcherTrait;
 use openzeppelin_token::erc20::ERC20Component;
 use openzeppelin_token::erc20::interface::IERC20DispatcherTrait;
 use openzeppelin_token::erc721::ERC721Component;
+use openzeppelin_token::erc721::interface::IERC721DispatcherTrait;
 use snforge_std::{
     EventSpyAssertionsTrait, EventSpyTrait, spy_events, start_cheat_caller_address,
     stop_cheat_caller_address,
@@ -1619,6 +1620,80 @@ fn test_transfer_batch_from_wrong_owner_fails() {
     start_cheat_caller_address(ethrx.contract_address, BOB);
     ethrx.transfer_batch_direct(array![BOB], array![112]);
     stop_cheat_caller_address(ethrx.contract_address);
+}
+
+#[test]
+fn test_transfer_batch_approved_operator_success() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_batch_star(array![ALICE], array![2]);
+
+    start_cheat_caller_address(ethrx.contract_address, ALICE);
+    ethrx.erc721.approve(BOB, 112);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    start_cheat_caller_address(ethrx.contract_address, BOB);
+    ethrx.transfer_batch_direct(array![BOB], array![112]);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    assert!(ethrx.owner_of(112) == BOB, "approved operator should transfer token 112");
+    assert!(ethrx.owner_of(113) == ALICE, "unapproved token 113 should stay with ALICE");
+}
+
+#[test]
+#[should_panic]
+fn test_transfer_batch_approved_operator_other_token_fails() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_batch_star(array![ALICE], array![2]);
+
+    start_cheat_caller_address(ethrx.contract_address, ALICE);
+    ethrx.erc721.approve(BOB, 112);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    start_cheat_caller_address(ethrx.contract_address, BOB);
+    ethrx.transfer_batch_direct(array![BOB], array![113]);
+    stop_cheat_caller_address(ethrx.contract_address);
+}
+
+#[test]
+fn test_transfer_batch_approval_for_all_success() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_batch_star(array![ALICE], array![2]);
+
+    start_cheat_caller_address(ethrx.contract_address, ALICE);
+    ethrx.erc721.set_approval_for_all(BOB, true);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    start_cheat_caller_address(ethrx.contract_address, BOB);
+    ethrx.transfer_batch_direct(array![BOB, BOB], array![112, 113]);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    assert!(ethrx.owner_of(112) == BOB, "operator should transfer token 112");
+    assert!(ethrx.owner_of(113) == BOB, "operator should transfer token 113");
+}
+
+#[test]
+fn test_transfer_batch_mixed_owner_and_operator() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_batch_star(array![ALICE, BOB], array![1, 1]);
+
+    start_cheat_caller_address(ethrx.contract_address, BOB);
+    ethrx.erc721.approve(ALICE, 113);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    start_cheat_caller_address(ethrx.contract_address, ALICE);
+    ethrx.transfer_batch_direct(array![ALICE, ALICE], array![112, 113]);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    assert!(ethrx.owner_of(112) == ALICE, "ALICE should keep her own token");
+    assert!(ethrx.owner_of(113) == ALICE, "ALICE should receive BOB's approved token");
 }
 
 #[test]

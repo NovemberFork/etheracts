@@ -337,8 +337,8 @@ pub mod EthrxV2 {
             assert!(tos.len() == token_ids.len(), "Mismatched lengths");
             for i in 0..token_ids.len() {
                 let to = *tos[i];
-                let from = get_caller_address();
                 let token_id = *token_ids[i];
+                let from = self.owner_of(token_id);
 
                 self.transfer_from(from, to, token_id);
             }
