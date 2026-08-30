@@ -10,7 +10,8 @@ use openzeppelin_token::erc20::ERC20Component;
 use openzeppelin_token::erc20::interface::IERC20DispatcherTrait;
 use openzeppelin_token::erc721::ERC721Component;
 use snforge_std::{
-    EventSpyAssertionsTrait, spy_events, start_cheat_caller_address, stop_cheat_caller_address,
+    EventSpyAssertionsTrait, EventSpyTrait, spy_events, start_cheat_caller_address,
+    stop_cheat_caller_address,
 };
 use crate::ethrxV2::{IEthrxV2Dispatcher, IEthrxV2DispatcherTrait, InitializerV2Args};
 use crate::setup::{
@@ -651,6 +652,149 @@ fn test_engraving_keep() {
     );
     assert!(ethrx.artifact_tag_nonce(artifact_id, 'RANDOM') == 0, "RANDOM nonce should be 0");
     assert!(ethrx.get_artifact(112) == new_artifact, "engraving data mismatch");
+}
+
+#[test]
+fn test_engrave_noop_skips_event_and_nonce() {
+    let (ethrx, _) = setup();
+    ethrx.mint_star(ALICE);
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    let artifact = Artifact {
+        collection: array![
+            ethrx.build_engraving('TITLE', "same"), ethrx.build_engraving('MESSAGE', "same"),
+        ],
+    };
+    ethrx.engrave_star(112, artifact.clone());
+    let artifact_id = ethrx.token_id_to_artifact_id(112);
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'TITLE') == 1, "TITLE nonce should be 1");
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'MESSAGE') == 1, "MESSAGE nonce should be 1");
+
+    let mut spy = spy_events();
+    ethrx.engrave_star(112, artifact.clone());
+
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'TITLE') == 1, "TITLE nonce should stay 1");
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'MESSAGE') == 1, "MESSAGE nonce should stay 1");
+    assert!(ethrx.get_artifact(112).collection.len() >= 2, "artifact should still be readable");
+    assert!(spy.get_events().events.len() == 0, "no-op engrave must not emit");
+}
+
+#[test]
+fn test_engrave_mixed_batch_only_changed_emits() {
+    let (ethrx, _) = setup();
+    ethrx.mint_star(ALICE);
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    ethrx
+        .engrave_star(
+            112,
+            Artifact {
+                collection: array![
+                    ethrx.build_engraving('TITLE', "keep"), ethrx.build_engraving('MESSAGE', "old"),
+                ],
+            },
+        );
+    let artifact_id = ethrx.token_id_to_artifact_id(112);
+
+    let mut spy = spy_events();
+    ethrx
+        .engrave_star(
+            112,
+            Artifact {
+                collection: array![
+                    ethrx.build_engraving('TITLE', "keep"), ethrx.build_engraving('MESSAGE', "new"),
+                ],
+            },
+        );
+
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'TITLE') == 1, "unchanged TITLE nonce stays 1");
+    assert!(ethrx.artifact_tag_nonce(artifact_id, 'MESSAGE') == 2, "changed MESSAGE nonce bumps");
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactEngraved(
+                        Ethrx::ArtifactEngraved {
+                            token_id: 112,
+                            old_engraving: ethrx.build_engraving('MESSAGE', "old"),
+                            new_engraving: ethrx.build_engraving('MESSAGE', "new"),
+                        },
+                    ),
+                ),
+            ],
+        );
+    spy
+        .assert_not_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactEngraved(
+                        Ethrx::ArtifactEngraved {
+                            token_id: 112,
+                            old_engraving: ethrx.build_engraving('TITLE', "keep"),
+                            new_engraving: ethrx.build_engraving('TITLE', "keep"),
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_set_tags_noop_skips_reregistered() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    let tags_before = ethrx.official_tags();
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(ethrx.contract_address, OWNER);
+    ethrx.set_tags(Option::Some(array![(1_usize, 'TITLE')]), Option::None);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    assert!(ethrx.official_tags() == tags_before, "official tags should be unchanged");
+    assert!(spy.get_events().events.len() == 0, "no-op tag rewrite must not emit");
+}
+
+#[test]
+fn test_set_tags_mixed_modify_only_changed_emits() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(ethrx.contract_address, OWNER);
+    ethrx.set_tags(Option::Some(array![(1_usize, 'TITLE'), (2_usize, 'BIO')]), Option::None);
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    let tags = ethrx.official_tags();
+    assert!(*tags.at(0) == 'TITLE', "index 1 TITLE unchanged");
+    assert!(*tags.at(1) == 'BIO', "index 2 MESSAGE -> BIO");
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::TagReregistered(
+                        Ethrx::TagReregistered { old_tag: 'MESSAGE', new_tag: 'BIO' },
+                    ),
+                ),
+            ],
+        );
+    spy
+        .assert_not_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::TagReregistered(
+                        Ethrx::TagReregistered { old_tag: 'TITLE', new_tag: 'TITLE' },
+                    ),
+                ),
+            ],
+        );
 }
 
 fn bytes_array_builder(strings: Array<ByteArray>) -> Array<Bytes> {

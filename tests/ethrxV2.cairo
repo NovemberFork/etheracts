@@ -385,6 +385,9 @@ pub mod EthrxV2 {
                     assert!(index <= total_registered_tags, "Index out of bounds");
 
                     let old_tag = self.tag_registry.entry(index).read();
+                    if old_tag == new_tag {
+                        continue;
+                    }
 
                     self.tag_registry.entry(index).write(new_tag);
                     self.emit(Event::TagReregistered(TagReregistered { old_tag, new_tag }));
@@ -531,6 +534,9 @@ pub mod EthrxV2 {
                 let nonce = self.tag_nonces.entry((artifact_id, new_engraving.tag)).read();
 
                 let old_data = self.artifacts.entry((artifact_id, new_engraving.tag, nonce)).read();
+                if old_data == new_engraving.data {
+                    continue;
+                }
 
                 self.tag_nonces.entry((artifact_id, new_engraving.tag)).write(nonce + 1);
                 self
