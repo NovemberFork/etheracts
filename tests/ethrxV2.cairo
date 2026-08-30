@@ -118,8 +118,15 @@ pub mod EthrxV2 {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         ArtifactEngraved: ArtifactEngraved,
+        ArtifactAssigned: ArtifactAssigned,
+        ArtifactPreserved: ArtifactPreserved,
         TagRegistered: TagRegistered,
         TagReregistered: TagReregistered,
+        MintPriceUpdated: MintPriceUpdated,
+        MintTokenUpdated: MintTokenUpdated,
+        MintingStatusUpdated: MintingStatusUpdated,
+        ContractURIUpdated: ContractURIUpdated,
+        BaseURIUpdated: BaseURIUpdated,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
@@ -133,21 +140,74 @@ pub mod EthrxV2 {
     }
 
     #[derive(Drop, starknet::Event)]
+    pub struct ArtifactAssigned {
+        #[key]
+        pub token_id: u256,
+        #[key]
+        pub artifact_id: felt252,
+        pub previous_artifact_id: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct ArtifactPreserved {
+        #[key]
+        pub token_id: u256,
+        #[key]
+        pub artifact_id: felt252,
+        pub from: ContractAddress,
+        pub to: ContractAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct ArtifactEngraved {
+        #[key]
+        pub token_id: u256,
+        #[key]
+        pub artifact_id: felt252,
+        #[key]
+        pub tag: felt252,
+        pub nonce: usize,
+        pub new_data: Bytes,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct TagRegistered {
+        pub index: usize,
+        pub new_tag: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
     pub struct TagReregistered {
+        pub index: usize,
         pub old_tag: felt252,
         pub new_tag: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct TagRegistered {
-        pub new_tag: felt252,
+    pub struct MintPriceUpdated {
+        pub old_price: u256,
+        pub new_price: u256,
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct ArtifactEngraved {
-        pub token_id: u256,
-        pub old_engraving: Engraving,
-        pub new_engraving: Engraving,
+    pub struct MintTokenUpdated {
+        pub old_token: ContractAddress,
+        pub new_token: ContractAddress,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct MintingStatusUpdated {
+        pub enabled: bool,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct ContractURIUpdated {
+        pub new_uri: ByteArray,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct BaseURIUpdated {
+        pub new_uri: ByteArray,
     }
 
     impl EthrxHooksImpl of ERC721Component::ERC721HooksTrait<ContractState> {
@@ -346,27 +406,52 @@ pub mod EthrxV2 {
 
         fn set_base_uri(ref self: ContractState, new_base_uri: ByteArray) {
             self._only_owner();
-            self.erc721._set_base_uri(new_base_uri);
+            if self.erc721._base_uri() == new_base_uri {
+                return;
+            }
+            self.erc721._set_base_uri(new_base_uri.clone());
+            self.emit(Event::BaseURIUpdated(BaseURIUpdated { new_uri: new_base_uri }));
         }
 
         fn set_contract_uri(ref self: ContractState, new_contract_uri: ByteArray) {
             self._only_owner();
-            self.contract_uri.write(new_contract_uri);
+            if self.contract_uri.read() == new_contract_uri {
+                return;
+            }
+            self.contract_uri.write(new_contract_uri.clone());
+            self
+                .emit(
+                    Event::ContractURIUpdated(ContractURIUpdated { new_uri: new_contract_uri }),
+                );
         }
 
         fn set_mint_price(ref self: ContractState, new_mint_price: u256) {
             self._only_owner();
+            let old_price = self.mint_price.read();
+            if old_price == new_mint_price {
+                return;
+            }
             self.mint_price.write(new_mint_price);
+            self.emit(Event::MintPriceUpdated(MintPriceUpdated { old_price, new_price: new_mint_price }));
         }
 
         fn set_mint_token(ref self: ContractState, new_mint_token: ContractAddress) {
             self._only_owner();
+            let old_token = self.mint_token.read();
+            if old_token == new_mint_token {
+                return;
+            }
             self.mint_token.write(new_mint_token);
+            self.emit(Event::MintTokenUpdated(MintTokenUpdated { old_token, new_token: new_mint_token }));
         }
 
         fn set_is_minting(ref self: ContractState, enabled: bool) {
             self._only_owner();
+            if self.is_minting.read() == enabled {
+                return;
+            }
             self.is_minting.write(enabled);
+            self.emit(Event::MintingStatusUpdated(MintingStatusUpdated { enabled }));
         }
 
         fn set_tags(
@@ -390,7 +475,12 @@ pub mod EthrxV2 {
                     }
 
                     self.tag_registry.entry(index).write(new_tag);
-                    self.emit(Event::TagReregistered(TagReregistered { old_tag, new_tag }));
+                    self
+                        .emit(
+                            Event::TagReregistered(
+                                TagReregistered { index, old_tag, new_tag },
+                            ),
+                        );
                 }
             }
 
@@ -402,7 +492,12 @@ pub mod EthrxV2 {
 
                     self.total_registered_tags.write(total_registered_tags);
                     self.tag_registry.entry(total_registered_tags).write(new_tag);
-                    self.emit(Event::TagRegistered(TagRegistered { new_tag }));
+                    self
+                        .emit(
+                            Event::TagRegistered(
+                                TagRegistered { index: total_registered_tags, new_tag },
+                            ),
+                        );
                 }
             }
         }
@@ -480,7 +575,12 @@ pub mod EthrxV2 {
 
                 self.total_registered_tags.write(total_registered_tags);
                 self.tag_registry.entry(total_registered_tags).write(new_tag);
-                self.emit(Event::TagRegistered(TagRegistered { new_tag }));
+                self
+                    .emit(
+                        Event::TagRegistered(
+                            TagRegistered { index: total_registered_tags, new_tag },
+                        ),
+                    );
             }
         }
 
@@ -510,18 +610,32 @@ pub mod EthrxV2 {
         ) {
             assert(!to.is_zero(), ERC721Errors::INVALID_RECEIVER);
 
+            let artifact_id = self.token_artifact_ids.entry(token_id).read();
             self.artifact_saving.entry(token_id).write(true); // <- @dev Custom line 1
             let previous_owner = self.erc721.update(to, token_id, get_caller_address());
             self.artifact_saving.entry(token_id).write(false); // <- @dev Custom line 2
 
             assert(from == previous_owner, ERC721Errors::INVALID_SENDER);
+            self
+                .emit(
+                    Event::ArtifactPreserved(
+                        ArtifactPreserved { token_id, artifact_id, from, to },
+                    ),
+                );
         }
 
         fn _wipe_artifact(ref self: ContractState, token_id: u256) {
-            let new_id: felt252 = self.artifact_nonces.read() + 1;
+            let previous_artifact_id = self.token_artifact_ids.entry(token_id).read();
+            let artifact_id: felt252 = self.artifact_nonces.read() + 1;
 
-            self.artifact_nonces.write(new_id);
-            self.token_artifact_ids.entry(token_id).write(new_id);
+            self.artifact_nonces.write(artifact_id);
+            self.token_artifact_ids.entry(token_id).write(artifact_id);
+            self
+                .emit(
+                    Event::ArtifactAssigned(
+                        ArtifactAssigned { token_id, artifact_id, previous_artifact_id },
+                    ),
+                );
         }
 
         fn _engrave_artifact(
@@ -549,10 +663,10 @@ pub mod EthrxV2 {
                             Event::ArtifactEngraved(
                                 ArtifactEngraved {
                                     token_id,
-                                    old_engraving: Engraving {
-                                        tag: new_engraving.tag, data: old_data,
-                                    },
-                                    new_engraving,
+                                    artifact_id,
+                                    tag: new_engraving.tag,
+                                    nonce: nonce + 1,
+                                    new_data: new_engraving.data,
                                 },
                             ),
                         );

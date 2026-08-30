@@ -566,8 +566,10 @@ fn test_engraving() {
                     Ethrx::Event::ArtifactEngraved(
                         Ethrx::ArtifactEngraved {
                             token_id: 112,
-                            old_engraving: ethrx.build_engraving('X_HANDLE', ""),
-                            new_engraving: ethrx.build_engraving('X_HANDLE', "c"),
+                            artifact_id,
+                            tag: 'X_HANDLE',
+                            nonce: 1,
+                            new_data: ethrx.build_engraving('X_HANDLE', "c").data,
                         },
                     ),
                 ),
@@ -720,8 +722,10 @@ fn test_engrave_mixed_batch_only_changed_emits() {
                     Ethrx::Event::ArtifactEngraved(
                         Ethrx::ArtifactEngraved {
                             token_id: 112,
-                            old_engraving: ethrx.build_engraving('MESSAGE', "old"),
-                            new_engraving: ethrx.build_engraving('MESSAGE', "new"),
+                            artifact_id,
+                            tag: 'MESSAGE',
+                            nonce: 2,
+                            new_data: ethrx.build_engraving('MESSAGE', "new").data,
                         },
                     ),
                 ),
@@ -735,8 +739,10 @@ fn test_engrave_mixed_batch_only_changed_emits() {
                     Ethrx::Event::ArtifactEngraved(
                         Ethrx::ArtifactEngraved {
                             token_id: 112,
-                            old_engraving: ethrx.build_engraving('TITLE', "keep"),
-                            new_engraving: ethrx.build_engraving('TITLE', "keep"),
+                            artifact_id,
+                            tag: 'TITLE',
+                            nonce: 1,
+                            new_data: ethrx.build_engraving('TITLE', "keep").data,
                         },
                     ),
                 ),
@@ -780,7 +786,7 @@ fn test_set_tags_mixed_modify_only_changed_emits() {
                 (
                     ethrx.contract_address,
                     Ethrx::Event::TagReregistered(
-                        Ethrx::TagReregistered { old_tag: 'MESSAGE', new_tag: 'BIO' },
+                        Ethrx::TagReregistered { index: 2, old_tag: 'MESSAGE', new_tag: 'BIO' },
                     ),
                 ),
             ],
@@ -791,7 +797,7 @@ fn test_set_tags_mixed_modify_only_changed_emits() {
                 (
                     ethrx.contract_address,
                     Ethrx::Event::TagReregistered(
-                        Ethrx::TagReregistered { old_tag: 'TITLE', new_tag: 'TITLE' },
+                        Ethrx::TagReregistered { index: 1, old_tag: 'TITLE', new_tag: 'TITLE' },
                     ),
                 ),
             ],
@@ -2257,4 +2263,191 @@ fn test_minting_fails_after_disabled() {
 
     // Minting should fail now
     ethrx.mint_batch_star(array![BOB], array![1]);
+}
+
+#[test]
+fn test_mint_emits_artifact_assigned() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    let mut spy = spy_events();
+    ethrx.mint_star(ALICE);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactAssigned(
+                        Ethrx::ArtifactAssigned {
+                            token_id: 112, artifact_id: 112, previous_artifact_id: 0,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_wipe_transfer_emits_artifact_assigned() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_star(ALICE);
+    let previous_artifact_id = ethrx.token_id_to_artifact_id(112);
+
+    let mut spy = spy_events();
+    ethrx.transfer_star(ALICE, BOB, 112);
+    let artifact_id = ethrx.token_id_to_artifact_id(112);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactAssigned(
+                        Ethrx::ArtifactAssigned {
+                            token_id: 112, artifact_id, previous_artifact_id,
+                        },
+                    ),
+                ),
+            ],
+        );
+    spy
+        .assert_not_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactPreserved(
+                        Ethrx::ArtifactPreserved {
+                            token_id: 112, artifact_id: previous_artifact_id, from: ALICE, to: BOB,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_save_transfer_emits_artifact_preserved() {
+    let (ethrx, _) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    ethrx.mint_star(ALICE);
+    let artifact_id = ethrx.token_id_to_artifact_id(112);
+
+    let mut spy = spy_events();
+    ethrx.transfer_with_engraving_star(ALICE, BOB, 112);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactPreserved(
+                        Ethrx::ArtifactPreserved {
+                            token_id: 112, artifact_id, from: ALICE, to: BOB,
+                        },
+                    ),
+                ),
+            ],
+        );
+    spy
+        .assert_not_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ArtifactAssigned(
+                        Ethrx::ArtifactAssigned {
+                            token_id: 112,
+                            artifact_id: artifact_id + 1,
+                            previous_artifact_id: artifact_id,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_admin_config_events() {
+    let (ethrx, erc20) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+    let new_contract_uri: ByteArray = "https://example.com/contract";
+    let new_base_uri: ByteArray = "https://example.com/base/";
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(ethrx.contract_address, OWNER);
+    ethrx.set_mint_price(MINT_PRICE * 2);
+    ethrx.set_mint_token(ALICE);
+    ethrx.set_minting(false);
+    ethrx.set_contract_uri(new_contract_uri.clone());
+    ethrx.set_base_uri(new_base_uri.clone());
+    ethrx.set_tags(Option::None, Option::Some(array!['BIO']));
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::MintPriceUpdated(
+                        Ethrx::MintPriceUpdated {
+                            old_price: MINT_PRICE, new_price: MINT_PRICE * 2,
+                        },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::MintTokenUpdated(
+                        Ethrx::MintTokenUpdated {
+                            old_token: erc20.contract_address, new_token: ALICE,
+                        },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::MintingStatusUpdated(
+                        Ethrx::MintingStatusUpdated { enabled: false },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::ContractURIUpdated(
+                        Ethrx::ContractURIUpdated { new_uri: new_contract_uri },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::BaseURIUpdated(
+                        Ethrx::BaseURIUpdated { new_uri: new_base_uri },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::TagRegistered(
+                        Ethrx::TagRegistered { index: 6, new_tag: 'BIO' },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_admin_config_noop_skips_events() {
+    let (ethrx, erc20) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(ethrx.contract_address, OWNER);
+    ethrx.set_mint_price(MINT_PRICE);
+    ethrx.set_mint_token(erc20.contract_address);
+    ethrx.set_minting(true);
+    ethrx.set_contract_uri(CONTRACT_URI());
+    ethrx.set_base_uri(BASE_URI());
+    stop_cheat_caller_address(ethrx.contract_address);
+
+    assert!(spy.get_events().events.len() == 0, "no-op admin writes must not emit");
 }
