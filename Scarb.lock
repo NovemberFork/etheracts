@@ -25,7 +25,7 @@ checksum = "sha256:19160f0993a6643e8e71a3bce03e54a37f26b8cad94f21668d7cc9afd08d2
 
 [[package]]
 name = "etheracts"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "alexandria_bytes",
  "alexandria_data_structures",
