@@ -127,6 +127,8 @@ pub mod EthrxV2 {
         MintingStatusUpdated: MintingStatusUpdated,
         ContractURIUpdated: ContractURIUpdated,
         BaseURIUpdated: BaseURIUpdated,
+        EtheractsPurchased: EtheractsPurchased,
+        VersionUpdated: VersionUpdated,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
@@ -208,6 +210,24 @@ pub mod EthrxV2 {
     #[derive(Drop, starknet::Event)]
     pub struct BaseURIUpdated {
         pub new_uri: ByteArray,
+    }
+
+    /// Emitted once per paid token mint (not for free/constructor mints).
+    #[derive(Drop, starknet::Event)]
+    pub struct EtheractsPurchased {
+        #[key]
+        pub token_id: u256,
+        #[key]
+        pub buyer: ContractAddress,
+        pub to: ContractAddress,
+        pub payment_token: ContractAddress,
+        pub price: u256,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct VersionUpdated {
+        pub old_version: usize,
+        pub new_version: usize,
     }
 
     impl EthrxHooksImpl of ERC721Component::ERC721HooksTrait<ContractState> {
@@ -504,7 +524,10 @@ pub mod EthrxV2 {
 
         fn upgrade_contract(ref self: ContractState, new_class_hash: ClassHash) {
             self._only_owner();
-            self.version.write(self.version.read() + 1);
+            let old_version = self.version.read();
+            let new_version = old_version + 1;
+            self.version.write(new_version);
+            self.emit(Event::VersionUpdated(VersionUpdated { old_version, new_version }));
             self.upgradeable.upgrade(new_class_hash);
         }
     }
@@ -586,6 +609,9 @@ pub mod EthrxV2 {
 
         fn _mint(ref self: ContractState, to: ContractAddress, amount: u256, is_paying: bool) {
             let total_tokens = self.erc721_enumerable.total_supply();
+            let payment_token = self.mint_token.read();
+            let price = self.mint_price.read();
+            let buyer = get_caller_address();
 
             let mut cost: u256 = 0;
             for i in 0..amount {
@@ -593,14 +619,26 @@ pub mod EthrxV2 {
                 if new_token_id <= self.max_supply.read() {
                     self.erc721.mint(to, new_token_id);
                     if is_paying {
-                        cost += self.mint_price.read();
+                        cost += price;
+                        self
+                            .emit(
+                                Event::EtheractsPurchased(
+                                    EtheractsPurchased {
+                                        token_id: new_token_id,
+                                        buyer,
+                                        to,
+                                        payment_token,
+                                        price,
+                                    },
+                                ),
+                            );
                     }
                 }
             }
 
             if cost > 0 {
-                let mint_token = ERC20ABIDispatcher { contract_address: self.mint_token.read() };
-                mint_token.transfer_from(get_caller_address(), self.owner(), cost);
+                let mint_token = ERC20ABIDispatcher { contract_address: payment_token };
+                mint_token.transfer_from(buyer, self.owner(), cost);
             }
         }
 

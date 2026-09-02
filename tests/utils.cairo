@@ -420,6 +420,10 @@ pub impl EthrxFacadeImplV2 of EthrxV2Trait {
         (*self.dispatcherV1).is_minting()
     }
 
+    fn version(self: @EthrxV2Facade) -> usize {
+        (*self.dispatcherV1).version()
+    }
+
     fn total_supply(self: @EthrxV2Facade) -> u256 {
         (*self.erc721_enumerable).total_supply()
     }

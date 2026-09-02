@@ -2451,3 +2451,105 @@ fn test_admin_config_noop_skips_events() {
 
     assert!(spy.get_events().events.len() == 0, "no-op admin writes must not emit");
 }
+
+#[test]
+fn test_upgrade_emits_version_updated() {
+    let (ethrx, _) = setup();
+    assert!(ethrx.version() == 1, "constructor version should be 1");
+
+    let mut spy = spy_events();
+    let ethrx = upgrade(ethrx);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::VersionUpdated(
+                        Ethrx::VersionUpdated { old_version: 1, new_version: 2 },
+                    ),
+                ),
+            ],
+        );
+    assert!(ethrx.version() == 2, "version should bump to 2 after upgrade");
+}
+
+#[test]
+fn test_mint_emits_etheracts_purchased() {
+    let (ethrx, erc20) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    let mut spy = spy_events();
+    ethrx.mint_star(ALICE);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::EtheractsPurchased(
+                        Ethrx::EtheractsPurchased {
+                            token_id: 112,
+                            buyer: BYSTANDER,
+                            to: ALICE,
+                            payment_token: erc20.contract_address,
+                            price: MINT_PRICE,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_mint_batch_emits_etheracts_purchased_per_token() {
+    let (ethrx, erc20) = setup();
+    let ethrx = upgrade(ethrx);
+    initializerV2(ethrx);
+
+    let mut spy = spy_events();
+    ethrx.mint_batch_star(array![ALICE, BOB], array![2, 1]);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::EtheractsPurchased(
+                        Ethrx::EtheractsPurchased {
+                            token_id: 112,
+                            buyer: BYSTANDER,
+                            to: ALICE,
+                            payment_token: erc20.contract_address,
+                            price: MINT_PRICE,
+                        },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::EtheractsPurchased(
+                        Ethrx::EtheractsPurchased {
+                            token_id: 113,
+                            buyer: BYSTANDER,
+                            to: ALICE,
+                            payment_token: erc20.contract_address,
+                            price: MINT_PRICE,
+                        },
+                    ),
+                ),
+                (
+                    ethrx.contract_address,
+                    Ethrx::Event::EtheractsPurchased(
+                        Ethrx::EtheractsPurchased {
+                            token_id: 114,
+                            buyer: BYSTANDER,
+                            to: BOB,
+                            payment_token: erc20.contract_address,
+                            price: MINT_PRICE,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
